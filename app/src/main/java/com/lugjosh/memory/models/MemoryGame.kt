@@ -4,9 +4,9 @@ import com.lugjosh.memory.utils.DEFAULT_ICONS
 
 class MemoryGame(private val boardSize: BoardSize) {
     val cards: List<MemoryCard>
-
     var numPairsFound = 0
-    var indexOfSingleSelectedCard: Int? = null
+    private var indexOfSingleSelectedCard: Int? = null
+    private var flips = 0
 
     init {
         val chosenImages = DEFAULT_ICONS.shuffled().take(boardSize.getNumPairs())
@@ -15,6 +15,7 @@ class MemoryGame(private val boardSize: BoardSize) {
     }
 
     fun flipCard(position: Int): Boolean {
+        flips++
         val card = cards[position]
         var foundMatch = false
         if (indexOfSingleSelectedCard == null) {
@@ -52,5 +53,9 @@ class MemoryGame(private val boardSize: BoardSize) {
 
     fun isCardFaceUp(position: Int): Boolean {
         return cards[position].isFaceUp
+    }
+
+    fun getMoves(): Int {
+        return flips / 2
     }
 }

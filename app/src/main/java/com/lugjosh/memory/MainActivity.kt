@@ -1,10 +1,12 @@
 package com.lugjosh.memory
 
+import android.animation.ArgbEvaluator
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
@@ -38,34 +40,45 @@ class MainActivity : AppCompatActivity() {
         pairs = tvNumPairs
         root = clRoot
 
+        tvNumPairs.setTextColor(ContextCompat.getColor(this,R.color.progress_none))
         memoryGame = MemoryGame(boardSize)
-
         adapter = MemoryBoardAdapter(this, boardSize, memoryGame.cards,
-                object : MemoryBoardAdapter.CardClickListener {
-                    override fun onCardClicked(position: Int) {
-                        updateGameFlip(position)
-                    }
+            object : MemoryBoardAdapter.CardClickListener {
+                override fun onCardClicked(position: Int) {
+                    updateGameFlip(position)
+                }
 
-                })
+            })
         board.adapter = adapter
         board.setHasFixedSize(true)
         board.layoutManager = GridLayoutManager(this, boardSize.getWidth())
     }
 
     private fun updateGameFlip(position: Int) {
-        if(memoryGame.haveWonGame()){
-            Snackbar.make(root,"You already won!",Snackbar.LENGTH_LONG).show()
+        if (memoryGame.haveWonGame()) {
+            Snackbar.make(root, "You already won!", Snackbar.LENGTH_LONG).show()
             return
         }
 
-        if (memoryGame.isCardFaceUp(position)){
-            Snackbar.make(root,"Invalid move!",Snackbar.LENGTH_LONG).show()
+        if (memoryGame.isCardFaceUp(position)) {
+            Snackbar.make(root, "Invalid move!", Snackbar.LENGTH_SHORT).show()
             return
         }
 
-        if(memoryGame.flipCard(position)){
-            Log.i(TAG,"Found a match! Pairs found: ${memoryGame.numPairsFound}")
+        if (memoryGame.flipCard(position)) {
+            Log.i(TAG, "Found a match! Pairs found: ${memoryGame.numPairsFound}")
+            val color = ArgbEvaluator().evaluate(
+                memoryGame.numPairsFound.toFloat() / boardSize.getNumPairs(),
+                ContextCompat.getColor(this, R.color.progress_none),
+                ContextCompat.getColor(this, R.color.progress_full)
+            ) as Int
+            tvNumPairs.setTextColor(color)
+            tvNumPairs.text = "Pairs: ${memoryGame.numPairsFound}/${boardSize.getNumPairs()}"
+            if (memoryGame.haveWonGame()) {
+                Snackbar.make(root, "You win! Congratulations", Snackbar.LENGTH_LONG).show()
+            }
         }
+        tvNumMoves.text = "Moves: ${memoryGame.getMoves()}"
         adapter.notifyDataSetChanged()
     }
 }
