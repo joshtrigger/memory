@@ -3,8 +3,15 @@ package com.lugjosh.memory
 import android.animation.ArgbEvaluator
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.LayoutDirection
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.widget.RadioGroup
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
@@ -40,7 +47,82 @@ class MainActivity : AppCompatActivity() {
         pairs = tvNumPairs
         root = clRoot
 
-        tvNumPairs.setTextColor(ContextCompat.getColor(this,R.color.progress_none))
+        setUpBoard()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.mi_refresh -> {
+                if (memoryGame.getMoves() > 0 && !memoryGame.haveWonGame()) {
+                    showAlertDialog("Quit your current game?", null, View.OnClickListener {
+                        setUpBoard()
+                    })
+                } else {
+                    setUpBoard()
+                }
+            }
+            R.id.mi_new_size -> {
+                showNewSizeDialog()
+                return true
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun showNewSizeDialog() {
+        val boardSizeView = LayoutInflater.from(this).inflate(R.layout.dialog_board_size, null)
+        val radioGroupSize = boardSizeView.findViewById<RadioGroup>(R.id.radioGroup)
+
+        when (boardSize) {
+            BoardSize.EASY -> radioGroupSize.check(R.id.rbEasy)
+            BoardSize.MEDIUM -> radioGroupSize.check(R.id.rbMedium)
+            BoardSize.HARD -> radioGroupSize.check(R.id.rbHard)
+        }
+        showAlertDialog("Choose new size", boardSizeView, View.OnClickListener {
+            boardSize = when (radioGroupSize.checkedRadioButtonId) {
+                R.id.rbEasy -> BoardSize.EASY
+                R.id.rbMedium -> BoardSize.MEDIUM
+                else -> BoardSize.HARD
+            }
+            setUpBoard()
+        })
+    }
+
+    private fun showAlertDialog(
+        title: String,
+        view: View?,
+        postiveClickListener: View.OnClickListener
+    ) {
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setView(view)
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("OK") { _, _ ->
+                postiveClickListener.onClick(null)
+            }.show()
+    }
+
+    private fun setUpBoard() {
+        when (boardSize) {
+            BoardSize.EASY -> {
+                tvNumMoves.text = "Easy: 4 x 2"
+                tvNumPairs.text = "Pairs:0 / 4"
+            }
+            BoardSize.MEDIUM -> {
+                tvNumMoves.text = "Easy: 6 x 3"
+                tvNumPairs.text = "Pairs:0 / 9"
+            }
+            BoardSize.HARD -> {
+                tvNumMoves.text = "Easy: 6 x 6"
+                tvNumPairs.text = "Pairs:0 / 12"
+            }
+        }
+        tvNumPairs.setTextColor(ContextCompat.getColor(this, R.color.progress_none))
         memoryGame = MemoryGame(boardSize)
         adapter = MemoryBoardAdapter(this, boardSize, memoryGame.cards,
             object : MemoryBoardAdapter.CardClickListener {
@@ -73,7 +155,7 @@ class MainActivity : AppCompatActivity() {
                 ContextCompat.getColor(this, R.color.progress_full)
             ) as Int
             tvNumPairs.setTextColor(color)
-            tvNumPairs.text = "Pairs: ${memoryGame.numPairsFound}/${boardSize.getNumPairs()}"
+            tvNumPairs.text = "Pairs: ${memoryGame.numPairsFound} / ${boardSize.getNumPairs()}"
             if (memoryGame.haveWonGame()) {
                 Snackbar.make(root, "You win! Congratulations", Snackbar.LENGTH_LONG).show()
             }
