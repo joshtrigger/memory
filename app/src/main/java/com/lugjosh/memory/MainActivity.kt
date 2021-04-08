@@ -1,6 +1,7 @@
 package com.lugjosh.memory
 
 import android.animation.ArgbEvaluator
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.LayoutDirection
@@ -21,12 +22,14 @@ import com.lugjosh.memory.models.BoardSize
 import com.lugjosh.memory.models.MemoryCard
 import com.lugjosh.memory.models.MemoryGame
 import com.lugjosh.memory.utils.DEFAULT_ICONS
+import com.lugjosh.memory.utils.EXTRA_BOARD_SIZE
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
+        private const val CREATE_REQUEST_CODE = 256
     }
 
     private lateinit var adapter: MemoryBoardAdapter
@@ -70,12 +73,34 @@ class MainActivity : AppCompatActivity() {
                 showNewSizeDialog()
                 return true
             }
+            R.id.mi_custom -> {
+                showCreationDialog()
+                return true
+            }
         }
         return super.onOptionsItemSelected(item)
     }
 
+    private fun showCreationDialog() {
+        val boardSizeView =
+            LayoutInflater.from(this).inflate(R.layout.dialog_board_size, null)
+        val radioGroupSize = boardSizeView.findViewById<RadioGroup>(R.id.radioGroup)
+
+        showAlertDialog("Choose new size", boardSizeView, View.OnClickListener {
+            val desiredBoardSize = when (radioGroupSize.checkedRadioButtonId) {
+                R.id.rbEasy -> BoardSize.EASY
+                R.id.rbMedium -> BoardSize.MEDIUM
+                else -> BoardSize.HARD
+            }
+            val intent = Intent(this, CreateActivity::class.java)
+            intent.putExtra(EXTRA_BOARD_SIZE, desiredBoardSize)
+            startActivityForResult(intent, CREATE_REQUEST_CODE)
+        })
+    }
+
     private fun showNewSizeDialog() {
-        val boardSizeView = LayoutInflater.from(this).inflate(R.layout.dialog_board_size, null)
+        val boardSizeView =
+            LayoutInflater.from(this).inflate(R.layout.dialog_board_size, null)
         val radioGroupSize = boardSizeView.findViewById<RadioGroup>(R.id.radioGroup)
 
         when (boardSize) {
@@ -114,11 +139,11 @@ class MainActivity : AppCompatActivity() {
                 tvNumPairs.text = "Pairs:0 / 4"
             }
             BoardSize.MEDIUM -> {
-                tvNumMoves.text = "Easy: 6 x 3"
+                tvNumMoves.text = "Medium: 6 x 3"
                 tvNumPairs.text = "Pairs:0 / 9"
             }
             BoardSize.HARD -> {
-                tvNumMoves.text = "Easy: 6 x 6"
+                tvNumMoves.text = "Hard: 6 x 6"
                 tvNumPairs.text = "Pairs:0 / 12"
             }
         }
